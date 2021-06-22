@@ -3,6 +3,7 @@ from rest_framework.fields import CurrentUserDefault
 from django.db.models import Count, Avg
 from accounts.models import Account
 from cats.models import *
+from booking.models import *
 from django.conf import settings
 
 class GeneralResponse(object):
@@ -34,6 +35,23 @@ class CatSerializer(serializers.ModelSerializer):
             return "{0}{1}".format(settings.BASE_URL[:-1], obj.picture.url)
         except Exception as e:
             return None
+
+
+class SlotSerializer(serializers.ModelSerializer):
+    time = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Slot
+        fields = ('id','time','date','date_booked','date_modified')
+
+    def get_time(self,obj):
+        return obj.date.strftime("%H:%M")
+
+
+class MonthSlotSerializer(serializers.Serializer):
+    # intialize fields
+    dictionary = serializers.DictField(
+    child = serializers.CharField())
 
 #
 # class TVImageSerializer(serializers.ModelSerializer):

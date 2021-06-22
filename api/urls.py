@@ -10,6 +10,7 @@ urlpatterns = [
 	url(r'^cats/$', views.get_cats, name='cats'),
 	url(r'^makebooking/$', views.make_booking, name='makebooking'),
 	url(r'^getslots$', views.get_slots, name='getslots'),
+	url(r'^getslotsformonth$', views.get_month, name='getslotsformonth'),
 	# url(r'^addshow/$', views.new_tvshow, name='addshow'),
 	# url(r'^addsmashup/$', views.add_smashup, name='addsmashup'),
 	# url(r'^allsmashups/$', views.all_smashups, name='allsmashups'),

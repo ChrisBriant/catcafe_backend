@@ -4,6 +4,7 @@ from django.db import IntegrityError
 from django.db.models import Q
 from django.db.models.functions import Substr, Lower
 from django.db.utils import IntegrityError
+from django.http import JsonResponse
 from django.utils.timezone import make_aware
 from rest_framework.decorators import api_view,authentication_classes,permission_classes,action
 from rest_framework.response import Response
@@ -20,8 +21,9 @@ from booking.models import *
 # from email_validator import validate_email, EmailNotValidError
 from password_validator import PasswordValidator
 from catcafe.email import sendjoiningconfirmation, sendpasswordresetemail
-from datetime import datetime
-import random
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+import random, json
 import pandas as pd
 
 
@@ -141,8 +143,8 @@ def make_booking(request):
     #format = "%Y-%m-%d %H:%M"
     date = datetime.strptime(date_str, format)
     date_timestamp = datetime.timestamp(pd.Timestamp(date.strftime(format)))
-    date_str_start = date.strftime('%d/%m/%Y') + ' 08:30'
-    date_str_end = date.strftime('%d/%m/%Y') + ' 20:00'
+    date_str_start = date.strftime('%m/%d/%Y') + ' 08:30'
+    date_str_end = date.strftime('%m/%d/%Y') + ' 20:00'
 
     date_rng = pd.date_range(start=date_str_start, end=date_str_end, freq='30T')
 
@@ -159,17 +161,82 @@ def make_booking(request):
     except IntegrityError as e:
         print(e)
         return Response(ResponseSerializer(GeneralResponse(False,'Already booked')).data, status=status.HTTP_400_BAD_REQUEST)
-    return Response("SPLUNGE", status=status.HTTP_201_CREATED)
+
+    #Serialize the slots for the day this one is on
+    date_from = datetime.combine(date, datetime.min.time())
+    delta = timedelta(days=1)
+    date_to = date_from + delta
+    format = "%Y-%m-%d"
+    slots_in_day = Slot.objects.filter(date__range=[make_aware(date_from).strftime(format), make_aware(date_to).strftime(format)]).order_by('date')
+    serializer = SlotSerializer(slots_in_day,many=True)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])
 def get_slots(request):
     date_str = request.query_params['date']
     #Convert to date
-    format = "%d/%m/%Y %H:%M"
-    date = datetime.strptime(date_str, format)
-    print(date)
-    return Response("McDonalds", status=status.HTTP_201_CREATED)
+    format = "%Y-%m-%d"
+    date_from = datetime.strptime(date_str, format)
+    delta = timedelta(days=1)
+    date_to = date_from + delta
+    #Get from DB
+    slots_in_day = Slot.objects.filter(date__range=[make_aware(date_from).strftime(format), make_aware(date_to).strftime(format)]).order_by('date')
+    serializer = SlotSerializer(slots_in_day,many=True)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+#Creates a dictionary object containing empty time slots
+def create_time_range(start,end,interval):
+    times = dict()
+    delta = timedelta(minutes=interval)
+    date_from = datetime.now().replace(hour=start[0],minute=start[1],second=0,microsecond=0)
+    date_to =  datetime.now().replace(hour=end[0],minute=end[1],second=0,microsecond=0) + delta
+    while date_from != date_to:
+        times[date_from.strftime("%H:%M")] = False
+        date_from = date_from + delta
+    return times
+
+class MonthSlots(object):
+    def __init__(self, dictonary):
+        self.dict = dictionary
+
+
+
+
+@api_view(['GET'])
+def get_month(request):
+    times = create_time_range((8,30),(20,0),30)
+    month = request.query_params['month']
+    year = request.query_params['year']
+    date_from = datetime(day=1,month=int(month),year=int(year))
+    date_to = date_from +  relativedelta(months=1)
+    format = "%Y-%m-%d"
+    slots_in_day = Slot.objects.filter(date__range=[date_from.strftime(format), date_to.strftime(format)]).order_by('date')
+    #Remove one date for the panda date frame
+    date_to = date_to + timedelta(days=-1)
+    #Create a date range, iterate through the days of the month constructing a dictionary with slots
+    date_rng = pd.date_range(start=date_from.strftime('%m/%d/%Y'), end=date_to.strftime('%m/%d/%Y'), freq='1D')
+    slots_month = dict()
+    slots_date_time = [ (d.date.strftime("%Y-%m-%d"),d.date.strftime("%H:%M")) for d in slots_in_day]
+    for day_of_month in date_rng.strftime(format).values:
+        #Add keys to dict
+        day_dict = dict()
+        day_dict['times'] = times
+        #Get the times for that day
+        slots_for_day = list(filter(lambda x: x[0] == day_of_month, slots_date_time))
+        for day_slot in slots_for_day:
+            day_dict['times'][day_slot[1]] = True
+        day_dict['allocated'] = len(slots_for_day)
+        print(slots_for_day,len(slots_for_day))
+        day_dict['available'] = len(times) - len(slots_for_day)
+        slots_month[day_of_month] = day_dict
+    #print(json.dumps(slots_month))
+    #serializer = MonthSlotSerializer(MonthSlots(slots_month))
+    for s in date_rng.strftime(format).values:
+        print(s,slots_month[s]['allocated'],slots_month[s]['available'])
+    return JsonResponse(slots_month)
+
+
 
 
 # # Create your views here.
