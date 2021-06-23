@@ -183,7 +183,7 @@ def get_slots(request):
     #Get from DB
     slots_in_day = Slot.objects.filter(date__range=[make_aware(date_from).strftime(format), make_aware(date_to).strftime(format)]).order_by('date')
     serializer = SlotSerializer(slots_in_day,many=True)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 #Creates a dictionary object containing empty time slots
 def create_time_range(start,end,interval):
@@ -199,9 +199,6 @@ def create_time_range(start,end,interval):
 class MonthSlots(object):
     def __init__(self, dictonary):
         self.dict = dictionary
-
-
-
 
 @api_view(['GET'])
 def get_month(request):
@@ -227,234 +224,29 @@ def get_month(request):
         for day_slot in slots_for_day:
             day_dict['times'][day_slot[1]] = True
         day_dict['allocated'] = len(slots_for_day)
-        print(slots_for_day,len(slots_for_day))
         day_dict['available'] = len(times) - len(slots_for_day)
         slots_month[day_of_month] = day_dict
-    #print(json.dumps(slots_month))
-    #serializer = MonthSlotSerializer(MonthSlots(slots_month))
-    for s in date_rng.strftime(format).values:
-        print(s,slots_month[s]['allocated'],slots_month[s]['available'])
     return JsonResponse(slots_month)
 
 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_slot(request):
+    slot_id = request.data['slot']
+    try:
+        slot = Slot.objects.get(id=slot_id)
+    except Exception as e:
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    #Check authorised
+    if (slot.customer == request.user) or request.user.is_staff:
+        slot.delete()
+        return Response(ResponseSerializer(GeneralResponse(True,'Successfully deleted booking.')).data, status=status.HTTP_200_OK)
+    else:
+        return Response(status=status.HTTP_403_FORBIDDEN)
 
-
-# # Create your views here.
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated,IsAdminUser])
-# def new_tvshow(request):
-#     # TODO: Look into logic, if no image, etc. do we enforce image upload?
-#     name = request.data.get('name')
-#     tvshow, success = TVShow.objects.get_or_create(
-#         user = request.user,
-#         name = name
-#     )
-#     picture = request.data.get('picture',None)
-#     if picture and success:
-#         picture = picture
-#         try:
-#             pic = TVImage(
-#                 show = tvshow,
-#                 picture=picture
-#             )
-#             pic.full_clean()
-#             pic.save()
-#         except Exception as e:
-#             print("File upload failed", e)
-#             return Response(ResponseSerializer(GeneralResponse(False,"Invalid File")).data, status=status.HTTP_400_BAD_REQUEST)
-#     elif picture and not success:
-#         #Update picture instead of create new one
-#         try:
-#             pic = TVImage.objects.get(show_id=tvshow.id)
-#             pic.picture = picture
-#             pic.full_clean()
-#             pic.save()
-#         except Exception as e:
-#             print("File upload failed", e)
-#             return Response(ResponseSerializer(GeneralResponse(False,"Invalid File")).data, status=status.HTTP_400_BAD_REQUEST)
-#     serializer = TVShowSerializer(tvshow)
-#     return Response(serializer.data, status=status.HTTP_201_CREATED)
-#
-#
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def add_smashup(request):
-#     show1 = request.data.get('show1')
-#     show2 = request.data.get('show2')
-#     categories = request.data.get('categories')
-#     try:
-#         show1 = TVShow.objects.get(id=request.data.get('show1'))
-#         show2 = TVShow.objects.get(id=request.data.get('show2'))
-#     except Exception as e:
-#         print(e)
-#         return Response(ResponseSerializer(GeneralResponse(False,"At least one of the shows doesn't exist")).data, status=status.HTTP_400_BAD_REQUEST)
-#     try:
-#         print(request.user, show1,show2)
-#         smashup = SmashUp(
-#             creator = request.user,
-#             show_1 = show1,
-#             show_2 = show2
-#         )
-#         smashup.clean()
-#         smashup.save()
-#
-#         #Create the categories
-#         for cat in categories:
-#             category, created = Category.objects.get_or_create(
-#                 user = request.user,
-#                 category = cat
-#             )
-#             CategorySmashup.objects.create(
-#                 smashup = smashup,
-#                 category = category
-#             )
-#         print("here")
-#         serializer = TVSmashupSerializer(smashup,context={'user_id' : request.user.id})
-#         return Response(serializer.data, status=status.HTTP_201_CREATED)
-#     except Exception as e:
-#         print(type(e))
-#         return Response(ResponseSerializer(GeneralResponse(False,"Unable to create smashup, a smashup probably alredy exists for these shows.")).data, status=status.HTTP_400_BAD_REQUEST)
-#
-# @api_view(['GET','POST'])
-# def all_smashups(request):
-#     smashups = SmashUp.objects.all().order_by('-date_added')
-#     serializer = TVSmashupSerializer(smashups,many=True,context={'user_id':request.user.id})
-#     return Response(serializer.data,status=status.HTTP_200_OK)
-#
-#
-# @api_view(['GET','POST'])
-# def get_smashup(request):
-#     try:
-#         smashup = SmashUp.objects.get(id=request.query_params['id'])
-#     except Exception as e:
-#         print(e)
-#         return Response(ResponseSerializer(GeneralResponse(False,"Smashup doesn't exist")).data, status=status.HTTP_400_BAD_REQUEST)
-#     serializer = TVSmashupSerializer(smashup,context={'user_id':request.user.id})
-#     return Response(serializer.data,status=status.HTTP_200_OK)
-#
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def my_smashups(request):
-#     smashups = SmashUp.objects.filter(creator=request.user)
-#     serializer = TVSmashupSerializer(smashups,many=True)
-#     return Response(serializer.data,status=status.HTTP_200_OK)
-#
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def my_tvshows(request):
-#     shows = TVShow.objects.filter(user=request.user)
-#     serializer = TVShowSerializer(shows,many=True)
-#     return Response(serializer.data,status=status.HTTP_200_OK)
-#
-#
-# @api_view(['GET'])
-# def search_tvshows(request):
-#     searchstr = request.query_params['search']
-#     shows = TVShow.objects.filter(name__icontains=searchstr)
-#     serializer = TVShowSerializer(shows,many=True)
-#     return Response(serializer.data,status=status.HTTP_200_OK)
-#
-# @api_view(['GET'])
-# def search(request):
-#     searchstr = request.query_params['search']
-#     shows = TVShow.objects.filter(name__icontains=searchstr)
-#     smashups = SmashUp.objects.filter(Q(show_1__name__icontains=searchstr) | Q(show_2__name__icontains=searchstr))
-#     showsandsmashups = ShowsAndSmashups(shows,smashups)
-#     serializer = ShowsAndSmashupsSerializer(showsandsmashups)
-#     return Response(serializer.data,status=status.HTTP_200_OK)
-#
-# @api_view(['GET'])
-# def shows_first_letter(request):
-#     searchstr = request.query_params['letter']
-#     shows = TVShow.objects.filter(name__istartswith=searchstr)
-#     serializer = TVShowSerializer(shows,many=True)
-#     return Response(serializer.data,status=status.HTTP_200_OK)
-#
-# @api_view(['GET'])
-# def search_id(request):
-#     show_id = int(request.query_params['id'])
-#     show = TVShow.objects.filter(id=show_id)
-#     smashups = SmashUp.objects.filter(Q(show_1__id=show_id) | Q(show_2__id=show_id))
-#     showsandsmashups = ShowsAndSmashups(show,smashups)
-#     serializer = ShowsAndSmashupsSerializer(showsandsmashups)
-#     return Response(serializer.data,status=status.HTTP_200_OK)
-#
-#
-# @api_view(['GET'])
-# def shows_index(request):
-#     shows = TVShow.objects.all().annotate(showidx=Lower(Substr('name', 1, 1))) .values('showidx').annotate(count_shows=Count('id')).order_by('showidx')
-#     for show in shows:
-#         print(show)
-#     serializer = ShowIndexSerializer(shows,many=True)
-#     return Response(serializer.data,status=status.HTTP_200_OK)
-#
-# @api_view(['POST'])
-# def add_rating(request):
-#     catsmashupid = request.data.get('id')
-#     show_1 = request.data.get('show_1')
-#     show_2 = request.data.get('show_2')
-#     categorysmashup = CategorySmashup.objects.get(id=catsmashupid)
-#     #Check that the show IDs match
-#     if categorysmashup.smashup.show_1.id == show_1['id'] and categorysmashup.smashup.show_2.id == show_2['id']:
-#         if request.user.id == None:
-#             user = None
-#         else:
-#             user = request.user
-#         if show_1['rating'] in range(1,6) and show_2['rating'] in range(1,6):
-#             try:
-#                 #Create show rating objects
-#                 show_1_rating = ShowRating.objects.create(
-#                     show = categorysmashup.smashup.show_1,
-#                     rating = show_1['rating']
-#                 )
-#                 show_2_rating = ShowRating.objects.create(
-#                     show = categorysmashup.smashup.show_2,
-#                     rating = show_2['rating']
-#                 )
-#                 rating = CategoryScore.objects.create(
-#                     user = user,
-#                     show_1_rating = show_1_rating,
-#                     show_2_rating = show_2_rating,
-#                     categorysmashup = categorysmashup
-#                 )
-#             except IntegrityError as e:
-#                 print(e)
-#                 return Response(ResponseSerializer(GeneralResponse(False,"You have already addded a rating for this category.")).data, status=status.HTTP_400_BAD_REQUEST)
-#             except Exception as e:
-#                 print(e)
-#                 return Response(ResponseSerializer(GeneralResponse(False,"Unable to add rating.")).data, status=status.HTTP_400_BAD_REQUEST)
-#         else:
-#             return Response(ResponseSerializer(GeneralResponse(False,"Rating must be a number between 1 and 5")).data, status=status.HTTP_400_BAD_REQUEST)
-#     else:
-#         return Response(ResponseSerializer(GeneralResponse(False,"The shows do not match the smashup")).data, status=status.HTTP_400_BAD_REQUEST)
-#     serializer = RatingSerializer(rating,context={'user_id':request.user.id})
-#     return Response(serializer.data,status=status.HTTP_200_OK)
-#
-#
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def update_categories(request):
-#     try:
-#         smashup = SmashUp.objects.get(id=request.data.get('id'),creator=request.user)
-#     except Exception as e:
-#         return Response(ResponseSerializer(GeneralResponse(False,"You are not authorised to change this Smashup.")).data, status=status.HTTP_401_UNAUTHORIZED)
-#     #Get the existing categories extract from DB and then remove ones which are not part of that set
-#     existing = request.data.get('existing')
-#     print('EXISTING', existing)
-#     existing_ids = [e['id'] for e in existing]
-#     remove_list = CategorySmashup.objects.exclude(id__in=existing_ids)
-#     remove_list.delete()
-#     #Add the new categories
-#     new_categories = request.data.get('new')
-#     new_names = [new['category'] for new in new_categories]
-#     for new_cat in new_names:
-#         category, created = Category.objects.get_or_create(
-#             user = request.user,
-#             category = new_cat
-#         )
-#         CategorySmashup.objects.create(
-#             smashup = smashup,
-#             category = category
-#         )
-#     serializer = TVSmashupSerializer(smashup,context={'user_id':request.user.id})
-#     return Response(serializer.data,status=status.HTTP_200_OK)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def my_slots(request):
+    slots = Slot.objects.filter(customer=request.user)
+    serializer = SlotSerializer(slots,many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

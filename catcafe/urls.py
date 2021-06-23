@@ -14,7 +14,6 @@ from accounts import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('authenticate/',CustomTokenObtainPairView.as_view()),
     url(r'confirm/(?P<hash>\w+)/',account_views.confirm,name='confirm')
 ]
 
