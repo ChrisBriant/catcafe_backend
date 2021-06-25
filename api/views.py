@@ -23,7 +23,7 @@ from password_validator import PasswordValidator
 from catcafe.email import sendjoiningconfirmation, sendpasswordresetemail
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
-import random, json
+import random, json, pytz
 import pandas as pd
 
 
@@ -142,6 +142,7 @@ def make_booking(request):
     format = "%d/%m/%Y %H:%M"
     #format = "%Y-%m-%d %H:%M"
     date = datetime.strptime(date_str, format)
+    print("Puttin in the date", date)
     date_timestamp = datetime.timestamp(pd.Timestamp(date.strftime(format)))
     date_str_start = date.strftime('%m/%d/%Y') + ' 08:30'
     date_str_end = date.strftime('%m/%d/%Y') + ' 20:00'
@@ -196,6 +197,22 @@ def create_time_range(start,end,interval):
         date_from = date_from + delta
     return times
 
+#Rounds time up in minutes
+#https://stackoverflow.com/questions/32723150/rounding-up-to-nearest-30-minutes-in-python/50268328
+def ceil_dt(dt, delta):
+    return dt + (datetime.min - dt) % delta
+
+def get_available_slots_nuber(day_date,slot_count):
+    if day_date == datetime.now().replace(hour=0, minute=0, second=0, microsecond=0):
+        #Create datefrome from time now
+        date_str_start = ceil_dt(datetime.now(), timedelta(minutes=30)).strftime('%m/%d/%Y %H:%M')
+        date_str_end = datetime.now().strftime('%m/%d/%Y') + ' 20:00'
+        date_rng = pd.date_range(start=date_str_start, end=date_str_end, freq='30T')
+        return len(date_rng.values)
+    else:
+        return slot_count
+
+
 class MonthSlots(object):
     def __init__(self, dictonary):
         self.dict = dictionary
@@ -227,15 +244,15 @@ def get_month(request):
         for day_slot in slots_for_day:
             #Checks that we are not past the date where the slot is booked
             if day_slot[2]>make_aware(date_time_today):
-                print([day_slot[1]])
                 allocated += 1
                 day_dict['times'][day_slot[1]] = True
         #Check that the day has not passed
         #TODO - Needs to be modified to go more granular if the actual day matches
         #Create method to get the slots that exist for the day
+        no_slots = get_available_slots_nuber(datetime.strptime(day_of_month,format),len(day_dict['times']))
         if datetime.strptime(day_of_month,format) >= date_today_from_midnight:
             day_dict['allocated'] = allocated
-            day_dict['available'] = len(day_dict['times']) - allocated
+            day_dict['available'] = no_slots - allocated
         else:
             #There are no available slots all allocated because the day has passed
             day_dict['allocated'] = len(day_dict['times'])
