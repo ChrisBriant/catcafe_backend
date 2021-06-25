@@ -202,11 +202,13 @@ class MonthSlots(object):
 
 @api_view(['GET'])
 def get_month(request):
-    times = create_time_range((8,30),(20,0),30)
+    #times = create_time_range((8,30),(20,0),30)
     month = request.query_params['month']
     year = request.query_params['year']
     date_from = datetime(day=1,month=int(month),year=int(year))
     date_to = date_from +  relativedelta(months=1)
+    date_time_today = datetime.now()
+    date_today_from_midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     format = "%Y-%m-%d"
     slots_in_day = Slot.objects.filter(date__range=[date_from.strftime(format), date_to.strftime(format)]).order_by('date')
     #Remove one date for the panda date frame
@@ -214,17 +216,30 @@ def get_month(request):
     #Create a date range, iterate through the days of the month constructing a dictionary with slots
     date_rng = pd.date_range(start=date_from.strftime('%m/%d/%Y'), end=date_to.strftime('%m/%d/%Y'), freq='1D')
     slots_month = dict()
-    slots_date_time = [ (d.date.strftime("%Y-%m-%d"),d.date.strftime("%H:%M")) for d in slots_in_day]
+    slots_date_time = [ (d.date.strftime("%Y-%m-%d"),d.date.strftime("%H:%M"),d.date) for d in slots_in_day]
     for day_of_month in date_rng.strftime(format).values:
         #Add keys to dict
         day_dict = dict()
-        day_dict['times'] = times
+        day_dict['times'] = create_time_range((8,30),(20,0),30)
         #Get the times for that day
         slots_for_day = list(filter(lambda x: x[0] == day_of_month, slots_date_time))
+        allocated = 0
         for day_slot in slots_for_day:
-            day_dict['times'][day_slot[1]] = True
-        day_dict['allocated'] = len(slots_for_day)
-        day_dict['available'] = len(times) - len(slots_for_day)
+            #Checks that we are not past the date where the slot is booked
+            if day_slot[2]>make_aware(date_time_today):
+                print([day_slot[1]])
+                allocated += 1
+                day_dict['times'][day_slot[1]] = True
+        #Check that the day has not passed
+        #TODO - Needs to be modified to go more granular if the actual day matches
+        #Create method to get the slots that exist for the day
+        if datetime.strptime(day_of_month,format) >= date_today_from_midnight:
+            day_dict['allocated'] = allocated
+            day_dict['available'] = len(day_dict['times']) - allocated
+        else:
+            #There are no available slots all allocated because the day has passed
+            day_dict['allocated'] = len(day_dict['times'])
+            day_dict['available'] = 0
         slots_month[day_of_month] = day_dict
     return JsonResponse(slots_month)
 
