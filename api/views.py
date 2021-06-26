@@ -142,7 +142,7 @@ def make_booking(request):
     format = "%d/%m/%Y %H:%M"
     #format = "%Y-%m-%d %H:%M"
     date = datetime.strptime(date_str, format)
-    print("Puttin in the date", date)
+    #The date is fixed at the opening times of the cat cafe and assumes local time in the UK
     date_timestamp = datetime.timestamp(pd.Timestamp(date.strftime(format)))
     date_str_start = date.strftime('%m/%d/%Y') + ' 08:30'
     date_str_end = date.strftime('%m/%d/%Y') + ' 20:00'
@@ -203,11 +203,13 @@ def ceil_dt(dt, delta):
     return dt + (datetime.min - dt) % delta
 
 def get_available_slots_nuber(day_date,slot_count):
-    if day_date == datetime.now().replace(hour=0, minute=0, second=0, microsecond=0):
+    if day_date == datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) \
+        and day_date >= datetime.now().replace(hour=8, minute=30, second=0, microsecond=0):
         #Create datefrome from time now
         date_str_start = ceil_dt(datetime.now(), timedelta(minutes=30)).strftime('%m/%d/%Y %H:%M')
         date_str_end = datetime.now().strftime('%m/%d/%Y') + ' 20:00'
         date_rng = pd.date_range(start=date_str_start, end=date_str_end, freq='30T')
+        print("AVAILABLE SLOTS", date_rng)
         return len(date_rng.values)
     else:
         return slot_count
@@ -223,8 +225,10 @@ def get_month(request):
     month = request.query_params['month']
     year = request.query_params['year']
     date_from = datetime(day=1,month=int(month),year=int(year))
+    #Set the time zone relative to the cat cafe which is either GMT or BST
+    cafe_tz = pytz.timezone('Europe/London')
     date_to = date_from +  relativedelta(months=1)
-    date_time_today = datetime.now()
+    date_time_today = datetime.now().astimezone(cafe_tz)
     date_today_from_midnight = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     format = "%Y-%m-%d"
     slots_in_day = Slot.objects.filter(date__range=[date_from.strftime(format), date_to.strftime(format)]).order_by('date')
@@ -235,6 +239,7 @@ def get_month(request):
     slots_month = dict()
     slots_date_time = [ (d.date.strftime("%Y-%m-%d"),d.date.strftime("%H:%M"),d.date) for d in slots_in_day]
     for day_of_month in date_rng.strftime(format).values:
+        print(datetime.now().astimezone(cafe_tz), datetime.now())
         #Add keys to dict
         day_dict = dict()
         day_dict['times'] = create_time_range((8,30),(20,0),30)
@@ -243,7 +248,7 @@ def get_month(request):
         allocated = 0
         for day_slot in slots_for_day:
             #Checks that we are not past the date where the slot is booked
-            if day_slot[2]>make_aware(date_time_today):
+            if day_slot[2]>date_time_today:
                 allocated += 1
                 day_dict['times'][day_slot[1]] = True
         #Check that the day has not passed
