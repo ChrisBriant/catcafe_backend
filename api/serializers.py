@@ -37,10 +37,11 @@ class CatSerializer(serializers.ModelSerializer):
             return None
 
 class TableSerializer(serializers.ModelSerializer):
+    booking_id = serializers.ReadOnlyField(source='id')
 
     class Meta:
         model = Table
-        fields = ('id','table_number')
+        fields = ('booking_id','table_number')
 
 
 

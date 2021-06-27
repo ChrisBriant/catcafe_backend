@@ -287,14 +287,14 @@ def get_month(request):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_slot(request):
-    slot_id = request.data['slot']
+    booking_id = request.data['booking_id']
     try:
-        slot = Slot.objects.get(id=slot_id)
+        table = Table.objects.get(id=booking_id)
     except Exception as e:
         return Response(status=status.HTTP_204_NO_CONTENT)
     #Check authorised
-    if (slot.customer == request.user) or request.user.is_staff:
-        slot.delete()
+    if (table.customer == request.user) or request.user.is_staff:
+        table.delete()
         return Response(ResponseSerializer(GeneralResponse(True,'Successfully deleted booking.')).data, status=status.HTTP_200_OK)
     else:
         return Response(status=status.HTTP_403_FORBIDDEN)
