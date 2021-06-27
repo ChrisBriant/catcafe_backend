@@ -167,11 +167,6 @@ def make_booking(request):
         )
         table.full_clean()
         table.save()
-        # Table.objects.create (
-        #     customer = request.user,
-        #     slot=slot,
-        #     table_number = table_number
-        # )
     except IntegrityError as e:
         print(e)
         return Response(ResponseSerializer(GeneralResponse(False,'Already booked')).data, status=status.HTTP_400_BAD_REQUEST)
@@ -252,18 +247,26 @@ def get_month(request):
     #Create a date range, iterate through the days of the month constructing a dictionary with slots
     date_rng = pd.date_range(start=date_from.strftime('%m/%d/%Y'), end=date_to.strftime('%m/%d/%Y'), freq='1D')
     slots_month = dict()
-    slots_date_time = [ (d.date.strftime("%Y-%m-%d"),d.date.strftime("%H:%M"),d.date) for d in slots_in_day]
+    #Create a list of tubles
+    # 0 = date in uk format, 1= time 24hr, 2=date object, 3=table bookings
+    slots_date_time = [ (d.date.strftime("%Y-%m-%d"),d.date.strftime("%H:%M"),d.date,d.table_set) for d in slots_in_day]
     for day_of_month in date_rng.strftime(format).values:
         print(datetime.now().astimezone(cafe_tz), datetime.now())
         #Add keys to dict
         day_dict = dict()
         day_dict['times'] = create_time_range((8,30),(20,0),30)
-        #Get the times for that day
+        #Get the times for that day - creates mapping
         slots_for_day = list(filter(lambda x: x[0] == day_of_month, slots_date_time))
         allocated = 0
         for day_slot in slots_for_day:
             #Checks that we are not past the date where the slot is booked
-            if day_slot[2]>date_time_today:
+            print(day_slot[3].count())
+            #Convert both dates to naive
+            time_format = "%Y-%m-%d %H:%M"
+            date_1 = datetime.strptime(datetime.strftime(day_slot[2],time_format),time_format)
+            date_2 = datetime.strptime(datetime.strftime(date_time_today,time_format),time_format)
+            if (date_1>date_2) and day_slot[3].count() == 8:
+                print('DATETIME CHECK',date_1,date_2,date_1>date_2)
                 allocated += 1
                 day_dict['times'][day_slot[1]] = True
         #Check that the day has not passed
