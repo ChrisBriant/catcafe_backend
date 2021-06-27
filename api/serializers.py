@@ -36,13 +36,21 @@ class CatSerializer(serializers.ModelSerializer):
         except Exception as e:
             return None
 
+class TableSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Table
+        fields = ('id','table_number')
+
+
 
 class SlotSerializer(serializers.ModelSerializer):
     time = serializers.SerializerMethodField()
+    table_set =  TableSerializer(many=True)
 
     class Meta:
         model = Slot
-        fields = ('id','time','date','date_booked','date_modified')
+        fields = ('id','table_set','time','date','date_booked','date_modified')
 
     def get_time(self,obj):
         return obj.date.strftime("%H:%M")

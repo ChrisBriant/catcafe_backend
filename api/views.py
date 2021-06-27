@@ -4,6 +4,7 @@ from django.db import IntegrityError
 from django.db.models import Q
 from django.db.models.functions import Substr, Lower
 from django.db.utils import IntegrityError
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.utils.timezone import make_aware
 from rest_framework.decorators import api_view,authentication_classes,permission_classes,action
@@ -138,6 +139,7 @@ def get_cats(request):
 def make_booking(request):
     user = request.user
     date_str = request.data.get('date')
+    table_number = request.data.get('table');
     #E.g. "19/06/2021 09:15"
     format = "%d/%m/%Y %H:%M"
     #format = "%Y-%m-%d %H:%M"
@@ -155,13 +157,26 @@ def make_booking(request):
 
     #Add to the database
     try:
-        Slot.objects.create(
+        slot,success = Slot.objects.get_or_create(
             date=make_aware(date),
-            customer = request.user
         )
+        table = Table(
+            customer = request.user,
+            slot=slot,
+            table_number = table_number
+        )
+        table.full_clean()
+        table.save()
+        # Table.objects.create (
+        #     customer = request.user,
+        #     slot=slot,
+        #     table_number = table_number
+        # )
     except IntegrityError as e:
         print(e)
         return Response(ResponseSerializer(GeneralResponse(False,'Already booked')).data, status=status.HTTP_400_BAD_REQUEST)
+    except ValidationError as e:
+        return Response(ResponseSerializer(GeneralResponse(False,'Table does not exist. Must be within range 1-8')).data, status=status.HTTP_400_BAD_REQUEST)
 
     #Serialize the slots for the day this one is on
     date_from = datetime.combine(date, datetime.min.time())
