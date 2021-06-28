@@ -203,7 +203,12 @@ def create_time_range(start,end,interval):
     date_from = datetime.now().replace(hour=start[0],minute=start[1],second=0,microsecond=0)
     date_to =  datetime.now().replace(hour=end[0],minute=end[1],second=0,microsecond=0) + delta
     while date_from != date_to:
-        times[date_from.strftime("%H:%M")] = False
+        table_dict = dict()
+        table_dict = {
+            'tables':[],
+            'booked':False
+        }
+        times[date_from.strftime("%H:%M")] = table_dict
         date_from = date_from + delta
     return times
 
@@ -259,16 +264,23 @@ def get_month(request):
         slots_for_day = list(filter(lambda x: x[0] == day_of_month, slots_date_time))
         allocated = 0
         for day_slot in slots_for_day:
-            #Checks that we are not past the date where the slot is booked
+            table_dict = dict()
+            table_dict['tables'] = list(day_slot[3].values('id','table_number'))
+            #table_dict['table_data']  = []            #Checks that we are not past the date where the slot is booked
             print(day_slot[3].count())
             #Convert both dates to naive
             time_format = "%Y-%m-%d %H:%M"
             date_1 = datetime.strptime(datetime.strftime(day_slot[2],time_format),time_format)
             date_2 = datetime.strptime(datetime.strftime(date_time_today,time_format),time_format)
             if (date_1>date_2) and day_slot[3].count() == 8:
-                print('DATETIME CHECK',date_1,date_2,date_1>date_2)
+                #table_data = dict(TableSerializer(day_slot[3],many=True).data)
+                table_dict['booked'] = True
+                #table_data['booked'] = True
+                #print('TABLE OBJECT',table_data)
                 allocated += 1
-                day_dict['times'][day_slot[1]] = True
+            else:
+                table_dict['booked'] = False
+            day_dict['times'][day_slot[1]] = table_dict
         #Check that the day has not passed
         #TODO - Needs to be modified to go more granular if the actual day matches
         #Create method to get the slots that exist for the day
