@@ -48,7 +48,7 @@ class TableSerializer(serializers.ModelSerializer):
 class SlotSerializer(serializers.ModelSerializer):
     time = serializers.SerializerMethodField()
     date_str = serializers.SerializerMethodField()
-    table_set =  TableSerializer(many=True)
+    table_set =  serializers.SerializerMethodField()
 
     class Meta:
         model = Slot
@@ -60,6 +60,9 @@ class SlotSerializer(serializers.ModelSerializer):
     #Helper for front end - friendly format so the date can be naive in JS code
     def get_date_str(self,obj):
         return obj.date.strftime("%Y-%m-%d %H:%M")
+
+    def get_table_set(self,obj):
+        return TableSerializer(obj.table_set.order_by('table_number'),many=True).data
 
 
 class MonthSlotSerializer(serializers.Serializer):
