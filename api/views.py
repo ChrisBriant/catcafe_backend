@@ -314,6 +314,6 @@ def delete_slot(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def my_slots(request):
-    slots = Slot.objects.filter(table__customer=request.user).distinct()
+    slots = Slot.objects.filter(table__customer=request.user).distinct().order_by('date')
     serializer = SlotSerializer(slots,many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
