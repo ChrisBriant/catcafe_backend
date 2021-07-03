@@ -13,4 +13,5 @@ urlpatterns = [
 	url(r'^getslotsformonth$', views.get_month, name='getslotsformonth'),
 	url(r'^mybookings/$', views.my_slots, name='mybookings'),
 	url(r'^deletebooking/$', views.delete_slot, name='deletebooking'),
+	url(r'^getmenu$', views.get_menu, name='getmenu'),
 ]

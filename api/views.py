@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.db.models.functions import Substr, Lower
 from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.http import JsonResponse
 from django.utils.timezone import make_aware
 from rest_framework.decorators import api_view,authentication_classes,permission_classes,action
@@ -317,3 +318,30 @@ def my_slots(request):
     slots = Slot.objects.filter(table__customer=request.user).distinct().order_by('date')
     serializer = SlotSerializer(slots,many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+def recur_dictify(frame):
+    if len(frame.columns) == 1:
+        if frame.values.size == 1: return frame.values[0][0]
+        return frame.values.squeeze()
+    grouped = frame.groupby(frame.columns[0])
+    d = {k: recur_dictify(g.ix[:,1:]) for k,g in grouped}
+    return d
+
+
+@api_view(['GET'])
+def get_menu(request):
+    print()
+    df = pd.read_csv (r'{}/assets/menu4.csv'.format(settings.BASE_DIR))
+    d = dict()
+    for row in df.itertuples(index=False):
+        print(row.Item)
+        if row.Category not in d.keys():
+            d[row.Category] = {}
+        if row.Type not in d[row.Category].keys():
+            d[row.Category][row.Type] = []
+        itm = dict()
+        itm['item'] = row.Item
+        itm['price'] = row.Price
+        d[row.Category][row.Type].append(itm)
+    return JsonResponse(d, safe=False)

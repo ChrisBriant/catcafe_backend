@@ -1,0 +1,37 @@
+Item,Price,Type,Category
+Latte,£1.80,Coffee,Drinks
+Cappuccino,£1.60,Coffee,Drinks
+Flat White,£1.60,Coffee,Drinks
+Americano,£1.40,Coffee,Drinks
+Espresso,£1.00,Coffee,Drinks
+Decaf,£1.60,Coffee,Drinks
+filter coffee (our house blend),£1.60,Coffee,Drinks
+English Breakfast,£1.80,Tea,Drinks
+Decaf,£1.20,Tea,Drinks
+Earl Grey,£1.80,Tea,Drinks
+Herbal Tea,£2.00,Tea,Drinks
+Cans of Pop,£2.00,Other Drinks,Drinks
+Milkshake (ask for available flavours),£2.50,Other Drinks,Drinks
+Glass of Milk,£1.00,Other Drinks,Drinks
+Mineral Water,£1.00,Other Drinks,Drinks
+Hot Chocolate,£1.50,Other Drinks,Drinks
+Bacon Bap,£2.00,Sandwiches,Snacks
+Sausage bap,£2.00,Sandwiches,Snacks
+Egg & Mushroom Bap,£1.90,Sandwiches,Snacks
+Ham & Cheese Croissant,£2.50,Sandwiches,Snacks
+Tuna Melt Panini,£2.50,Paninis,Snacks
+Mozzarella & Tomato Panini,£2.00,Paninis,Snacks
+Ham & Cheese Panini,£2.50,Paninis,Snacks
+Chicken & Pesto Panini,£2.50,Paninis,Snacks
+Steak & Emmental Panini,£3.00,Paninis,Snacks
+Cheese & Tomato Toastie,£2.00,Other Snacks,Snacks
+Cheese & Ham Toastie,£2.50,Other Snacks,Snacks
+Breakfast Burrito,£3.00,Other Snacks,Snacks
+Vegan Meatball Wrap,£2.00,Other Snacks,Snacks
+Crisps,£1.00,Other Snacks,Snacks
+Chocolate Bar,£1.00,Other Snacks,Snacks
+Rocky Road,£2.00,Cakes,Snacks
+Doughnut,£1.50,Cakes,Snacks
+Croissant,£1.50,Cakes,Snacks
+Cheesecake,£2.50,Cakes,Snacks
+Apple Pie,£2.50,Cakes,Snacks
