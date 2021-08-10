@@ -22,7 +22,7 @@ from cats.models import *
 from booking.models import *
 # from email_validator import validate_email, EmailNotValidError
 from password_validator import PasswordValidator
-from catcafe.email import sendjoiningconfirmation, sendpasswordresetemail
+from catcafe.email import sendjoiningconfirmation, sendpasswordresetemail, sendcontactmessage
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import random, json, pytz
@@ -345,3 +345,14 @@ def get_menu(request):
         itm['price'] = row.Price
         d[row.Category][row.Type].append(itm)
     return JsonResponse(d, safe=False)
+
+@api_view(['POST'])
+def contact(request):
+    if request.user.is_authenticated:
+        from_user = request.user.name
+    else:
+        from_user = "Anonymous"
+    subject = 'Cat Cafe - Message from ' + from_user
+    message = request.data['message']
+    sendcontactmessage(message,subject)
+    return Response(ResponseSerializer(GeneralResponse(True,'Message Sent')).data, status=status.HTTP_200_OK)

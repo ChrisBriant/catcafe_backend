@@ -40,3 +40,20 @@ def sendpasswordresetemail(url,username,emailad):
         print(response.headers)
     except Exception as e:
         print(e)
+
+
+def sendcontactmessage(message,subject):
+    f = ADMIN_SMTP
+    t = 'cbri4nt@gmail.com'
+    s = subject
+    c = "<html><head><title>Reset Password</title></head><body><p> "+ \
+                                    message + "</p></body></html>"
+    mail = Mail(from_email=f, subject=s, to_emails=t, html_content=c)
+    try:
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        response = sg.send(mail)
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
+    except Exception as e:
+        print(e)
