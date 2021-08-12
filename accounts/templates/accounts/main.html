@@ -3,8 +3,106 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=0,width=device-width" />
-<title>Title Goes Here</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+  <style>
+      * {
+              margin: auto;
+              padding: 0;
+              -webkit-box-sizing: border-box;
+                      box-sizing: border-box;
+      }
+
+      html,
+      body {
+              background-color: #ffffff;
+              color:#414548;
+              font-family: 'Lato','Arial',sans-serif;
+              font-size: 22px;
+              font-weight: 400;
+              text-rendering: optimizeLegibility;
+              overflow-x: hidden;
+              margin: auto;
+              min-height: 100vh;
+      }
+
+      .clearfix {zoom:1}
+      .clearfix::after {
+              content: '.';
+              clear: both;
+              display: block;
+              height: 0;
+              visibility: hidden;
+      }
+      h1,h4 {
+          color:#414548;
+          font-size: 200%;
+          margin-bottom: 20px;
+      }
+      p {
+          margin-bottom: 20px;
+      }
+
+      img {
+        margin:.4rem;
+      }
+
+      .row {
+          margin-bottom: 5px;
+      }
+
+      .header-bg {
+          background-color: #796460ff;
+      }
+
+      .center-text {
+        text-align: center;
+      }
+
+      /*standard button*/
+      .std-btn {
+        font: inherit;
+        margin: 2px;
+        border: 1px solid #8a7d5b;
+        background: #ebd7a0;
+        padding: 0.5rem 1rem;
+        color: #5e5b54;
+        font-size: 80%;
+        border-radius: 5px;
+        box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.26);
+        cursor: pointer;
+        text-decoration: none;
+      }
+
+      .std-btn:hover,
+      .std-btn:active {
+        background: #f2dda2;
+        border-color: #8a7d5b;
+        box-shadow: 1px 1px 8px rgba(77, 51, 51, 0.26);
+      }
+
+      @media only screen and (max-width: 780px) {
+          img {
+              width: 80%;
+          }
+          h2 {
+              font-size: 75%;
+          }
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.min.js" integrity="sha384-cn7l7gDp0eyniUwwAZgrzD06kc/tftFf19TOAs2zVinnD/C7E91j9yyk5//jjpt/" crossorigin="anonymous"></script>
+<title>Cat Cafe</title>
 </head>
+
+<header>
+  <div class="row header-bg">
+      <div class="col">
+          <img
+          src="http://cdn.mcauto-images-production.sendgrid.net/07010993a1d64a61/7751e635-0787-4c0e-b448-bbb485e5be73/329x60.png"
+          alt="Company Logo"
+          />
+      </div>
+  </div>
+</header>
 <body>
   <div  class="container">
     {% block content %}

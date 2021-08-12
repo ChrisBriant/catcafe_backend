@@ -48,10 +48,8 @@ class RegistrationForm(forms.ModelForm):
         user.set_password(self.cleaned_data["password"])
         user.hash = hex(random.getrandbits(128))
         #Get joining confirmation information over to user
-        #url = BASE_URL + "confirm/" + "/" + user.id + "/" + user.hash + "/?next=/add-listing"
-        print(user.hash)
         url = BASE_URL + "confirm/" + user.hash + "/?next=/add-listing"
-        sendjoiningconfirmation(url,user.name,user.email)
+        sendjoiningconfirmation(url,user.email,user.name,'CONFIRM_ACCOUNT_EMAIL')
         if commit:
             user.save()
         return user
@@ -112,8 +110,8 @@ class UserChangeForm(forms.ModelForm):
 
 class ChangePasswordForm(forms.Form):
     PASS_MIN_LENGTH = 8
-    password = forms.CharField(label='Password', widget=forms.PasswordInput)
-    passwordchk = forms.CharField(label='Confirm', widget=forms.PasswordInput)
+    password = forms.CharField(label='Password', widget=forms.PasswordInput(attrs={'class':'form-control'}))
+    passwordchk = forms.CharField(label='Confirm', widget=forms.PasswordInput(attrs={'class':'form-control'}))
 
     def clean(self):
         cleaned_data = super(ChangePasswordForm, self).clean()

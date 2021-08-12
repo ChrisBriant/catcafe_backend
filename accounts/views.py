@@ -52,19 +52,6 @@ class ProfileView(UpdateView):
     def get_object(self):
         return self.request.user
 
-
-# def confirm(request,hash):
-#     try:
-#         user = Account.objects.get(hash=hash)
-#         user.is_enabled = True
-#         user.save()
-#         success = True
-#     except Exception as e:
-#         success = False
-#         messages.error(request,"Something went wrong, please send a new password reset request")
-#     return render(request,'registration/confirm.html',{'success' : success, 'show_header' : True, 'login_url' : BASE_URL })
-
-
 def login(request):
     next_url = request.GET.get('next')
     if request.method == 'POST':
@@ -98,7 +85,7 @@ def passreset(request):
                 user.save()
                 #Send registration confirmation
                 url = BASE_URL + "password_reset_change/"+hash
-                sendpasswordresetemail(url,user.name,user.email)
+                sendpasswordresetemail(url,user.email,user.name,'RESET_PASSWORD_EMAIL' )
                 messages.info(request,"Account confirmation has been resent to " + user.email + " please check your inbox for the confirmation link")
             except Exception as e:
                 print(e)
@@ -115,20 +102,21 @@ def passreset_api(request,hash):
         if form.is_valid():
             try:
                 user = Account.objects.get(hash=hash)
+                print(user)
                 user.set_password(form.cleaned_data['password'])
                 user.is_enabled = True
                 #Change the hash for security
                 user.hash = hex(random.getrandbits(128))
                 user.save()
                 messages.info(request,"Your password has successfully been reset")
-                return HttpResponseRedirect('/accounts/login/?next=/add-listing')
             except Exception as e:
                 print(e)
                 messages.error(request,"Sorry a matching account cannot be found")
         else:
-            pass
-            #messages.error(request,form.errors)
-    return render(request, 'registration/password_reset_api.html', {'form' : form, 'show_header' : True, 'login_url' : BASE_URL })
+            messages.error(request,"There is a problem with the passwords, either they do not match " +
+                                    "or the password is not valid. It must be eight characters and include at " +
+                                    "least one number and one special character.")
+    return render(request, 'accounts/password_reset_api.html', {'form' : form, 'show_header' : True, 'login_url' : BASE_URL })
 
 
 
@@ -149,9 +137,6 @@ def changepass_reset(request,hash):
             except Exception as e:
                 print(e)
                 messages.error(request,"Sorry a matching account cannot be found")
-        else:
-            pass
-            #messages.error(request,form.errors)
     return render(request,'registration/password_reset_form.html', {'form' : form })
 
 #When user is LOGGED IN
@@ -163,7 +148,6 @@ def changepass(request):
                 form = NewPasswordForm(request.POST,user=user)
                 if form.is_valid():
                     try:
-                        print("doing password change")
                         user.set_password(form.cleaned_data['password'])
                         user.save()
                         auth_login(request,user)
@@ -171,9 +155,6 @@ def changepass(request):
                         return HttpResponseRedirect(reverse('home'))
                     except Exception as e:
                         messages.error(request,"Unable to change password")
-        else:
-            pass
-            #messages.error(request,form.errors)
     else:
         return HttpResponseRedirect('/accounts/login/?next=/add-listing')
     return render(request,'registration/password_change_form.html', {'form' : form })
@@ -181,8 +162,6 @@ def changepass(request):
 
 def confirm(request,hash):
     next_url = request.GET.get('next')
-    print(hash)
-    print(next_url)
     try:
         user = Account.objects.get(hash=hash)
         user.is_enabled = True

@@ -14,7 +14,8 @@ from accounts import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    url(r'confirm/(?P<hash>\w+)/',account_views.confirm,name='confirm')
+    url(r'confirm/(?P<hash>\w+)/',account_views.confirm,name='confirm'),
+    url(r'passwordreset/(?P<hash>\w+)/',account_views.passreset_api,name='passwordreset')
 ]
 
 

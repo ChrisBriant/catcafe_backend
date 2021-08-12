@@ -5,7 +5,6 @@ def image_path_handler(instance, filename):
     fn, ext = os.path.splitext(filename)
     #Create a random filename using hash function
     name = secrets.token_hex(20)
-    print("uploading",instance.__dict__)
     return "titleimage_{id}/{name}.png".format(id=instance.id,name=name)
 
 

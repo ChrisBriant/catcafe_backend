@@ -14,13 +14,10 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework import status
 from rest_framework_simplejwt import tokens
 from rest_framework_simplejwt.tokens import RefreshToken
-#from catcafe.permissions import is_authorised
 from catcafe.settings import BASE_URL
 from .serializers import *
-#from difflib import SequenceMatcher
 from cats.models import *
 from booking.models import *
-# from email_validator import validate_email, EmailNotValidError
 from password_validator import PasswordValidator
 from catcafe.email import sendjoiningconfirmation, sendpasswordresetemail, sendcontactmessage
 from datetime import datetime, timedelta
@@ -47,16 +44,13 @@ def get_token(request):
             password = request.data["password"]
             user = authenticate(username=email,password=password)
             if user:
-                print('USER',user.__dict__)
                 if user.is_enabled:
                     #Issue token
                     token = get_tokens_for_user(user)
                     return Response(token, status=status.HTTP_200_OK)
                 else:
-                    print("Account Disabled")
                     return Response(ResponseSerializer(GeneralResponse(False,"User is not enabled")).data, status=status.HTTP_400_BAD_REQUEST)
             else:
-                print("Credentials Failed")
                 return Response(ResponseSerializer(GeneralResponse(False,"User name or password are incorrect")).data, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             print(e)
@@ -88,7 +82,7 @@ def register(request):
         user.hash = hex(random.getrandbits(128))
         user.save()
         url = BASE_URL + "confirm/" + user.hash + "/"
-        sendjoiningconfirmation(url,user.name,user.email)
+        sendjoiningconfirmation(url,user.email,user.name,'CONFIRM_ACCOUNT_EMAIL')
         return Response(ResponseSerializer(GeneralResponse(True,'Account Created')).data, status=status.HTTP_201_CREATED)
     except IntegrityError as e:
         print(type(e).__name__)
@@ -100,7 +94,6 @@ def register(request):
 @api_view(['POST'])
 def forgot_password(request):
     email = request.data['email']
-    print(email)
     try:
         user = Account.objects.get(email=email)
     except Exception as e:
@@ -109,7 +102,7 @@ def forgot_password(request):
     user.hash = hex(random.getrandbits(128))
     user.save()
     url = BASE_URL + "passwordreset/" + user.hash + "/"
-    sendpasswordresetemail(url,user.name,user.email)
+    sendpasswordresetemail(url,user.email,user.name,'RESET_PASSWORD_EMAIL')
     return Response(ResponseSerializer(GeneralResponse(True,'Please check your email and click on the link to reset your password')).data, status=status.HTTP_200_OK)
 
 
@@ -143,7 +136,6 @@ def make_booking(request):
     table_number = request.data.get('table');
     #E.g. "19/06/2021 09:15"
     format = "%d/%m/%Y %H:%M"
-    #format = "%Y-%m-%d %H:%M"
     date = datetime.strptime(date_str, format)
     #The date is fixed at the opening times of the cat cafe and assumes local time in the UK
     date_timestamp = datetime.timestamp(pd.Timestamp(date.strftime(format)))
@@ -225,7 +217,6 @@ def get_available_slots_nuber(day_date,slot_count):
         date_str_start = ceil_dt(datetime.now(), timedelta(minutes=30)).strftime('%m/%d/%Y %H:%M')
         date_str_end = datetime.now().strftime('%m/%d/%Y') + ' 20:00'
         date_rng = pd.date_range(start=date_str_start, end=date_str_end, freq='30T')
-        print("AVAILABLE SLOTS", date_rng)
         return len(date_rng.values)
     else:
         return slot_count
@@ -257,7 +248,6 @@ def get_month(request):
     # 0 = date in uk format, 1= time 24hr, 2=date object, 3=table bookings
     slots_date_time = [ (d.date.strftime("%Y-%m-%d"),d.date.strftime("%H:%M"),d.date,d.table_set) for d in slots_in_day]
     for day_of_month in date_rng.strftime(format).values:
-        print(datetime.now().astimezone(cafe_tz), datetime.now())
         #Add keys to dict
         day_dict = dict()
         day_dict['times'] = create_time_range((8,30),(20,0),30)
@@ -267,23 +257,17 @@ def get_month(request):
         for day_slot in slots_for_day:
             table_dict = dict()
             table_dict['tables'] = list(day_slot[3].values('id','table_number'))
-            #table_dict['table_data']  = []            #Checks that we are not past the date where the slot is booked
-            print(day_slot[3].count())
             #Convert both dates to naive
             time_format = "%Y-%m-%d %H:%M"
             date_1 = datetime.strptime(datetime.strftime(day_slot[2],time_format),time_format)
             date_2 = datetime.strptime(datetime.strftime(date_time_today,time_format),time_format)
             if (date_1>date_2) and day_slot[3].count() == 8:
-                #table_data = dict(TableSerializer(day_slot[3],many=True).data)
                 table_dict['booked'] = True
-                #table_data['booked'] = True
-                #print('TABLE OBJECT',table_data)
                 allocated += 1
             else:
                 table_dict['booked'] = False
             day_dict['times'][day_slot[1]] = table_dict
         #Check that the day has not passed
-        #TODO - Needs to be modified to go more granular if the actual day matches
         #Create method to get the slots that exist for the day
         no_slots = get_available_slots_nuber(datetime.strptime(day_of_month,format),len(day_dict['times']))
         if datetime.strptime(day_of_month,format) >= date_today_from_midnight:
@@ -335,7 +319,6 @@ def get_menu(request):
     df = pd.read_csv (r'{}/assets/menu4.csv'.format(settings.BASE_DIR))
     d = dict()
     for row in df.itertuples(index=False):
-        print(row.Item)
         if row.Category not in d.keys():
             d[row.Category] = {}
         if row.Type not in d[row.Category].keys():

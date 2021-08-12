@@ -16,7 +16,6 @@ class Slot(models.Model):
 
 def validate_table(value):
     if value not in range(1,9):
-        print('validating',value, type(value))
         raise ValidationError(
             ('Table number does not exist'),
             params={'table_number': value},
