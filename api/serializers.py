@@ -62,7 +62,12 @@ class SlotSerializer(serializers.ModelSerializer):
         return obj.date.strftime("%Y-%m-%d %H:%M")
 
     def get_table_set(self,obj):
-        return TableSerializer(obj.table_set.order_by('table_number'),many=True).data
+        #If this is a users request then we only want their booked tables
+        if self.context:
+            table_data = obj.table_set.filter(customer=self.context['user']).order_by('table_number')
+        else:
+            table_data = obj.table_set.order_by('table_number')
+        return TableSerializer(table_data,many=True).data
 
 
 class MonthSlotSerializer(serializers.Serializer):

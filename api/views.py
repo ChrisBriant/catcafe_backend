@@ -300,7 +300,7 @@ def delete_slot(request):
 @permission_classes([IsAuthenticated])
 def my_slots(request):
     slots = Slot.objects.filter(table__customer=request.user).distinct().order_by('date')
-    serializer = SlotSerializer(slots,many=True)
+    serializer = SlotSerializer(slots,many=True,context={'user':request.user})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
