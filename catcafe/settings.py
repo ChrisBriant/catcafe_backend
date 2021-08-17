@@ -19,9 +19,9 @@ BASE_URL = "http://127.0.0.1:8000/"
 SECRET_KEY = 'r2!(vvc(ql#u2araub8hzm+5$!cjr9*oeelnd6biqg4x7iywk('
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['catcafeapi.chrisbriant.uk']
 
 
 # Application definition
@@ -103,12 +103,13 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'catcafe',
         'USER': 'catcafe',
-        'PASSWORD': 'catcafe',
+        'PASSWORD': 'rYEr2BdJ8MBsw58W',
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }
 
+DEFAULT_AUTO_FIELD='django.db.models.AutoField' 
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -158,15 +159,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_URL = '/static/'
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
-# STATIC_ROOT = os.path.join(BASE_DIR,'templates')
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, "templates/static"),
-# ]
+STATIC_ROOT = os.path.join(BASE_DIR + '/static/')
 
 #These are settings for your forum site and they are referenced from within the project
 SITE_NAME = "Cat Cafe"
